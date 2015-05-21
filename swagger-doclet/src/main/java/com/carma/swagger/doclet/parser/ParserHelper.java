@@ -1,32 +1,15 @@
 package com.carma.swagger.doclet.parser;
 
-import static com.google.common.base.Objects.firstNonNull;
-import static com.google.common.collect.Lists.transform;
-import static java.util.Arrays.asList;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.carma.swagger.doclet.DocletOptions;
 import com.carma.swagger.doclet.model.HttpMethod;
 import com.google.common.base.Function;
-import com.sun.javadoc.AnnotationDesc;
-import com.sun.javadoc.ClassDoc;
-import com.sun.javadoc.FieldDoc;
-import com.sun.javadoc.MethodDoc;
-import com.sun.javadoc.Parameter;
-import com.sun.javadoc.ParameterizedType;
-import com.sun.javadoc.ProgramElementDoc;
-import com.sun.javadoc.SeeTag;
-import com.sun.javadoc.Tag;
-import com.sun.javadoc.Type;
-import com.sun.javadoc.TypeVariable;
+import com.sun.javadoc.*;
+
+import java.util.*;
+
+import static com.google.common.base.Objects.firstNonNull;
+import static com.google.common.collect.Lists.transform;
+import static java.util.Arrays.asList;
 
 /**
  * The ParserHelper represents a helper class for the parsers
@@ -177,9 +160,21 @@ public class ParserHelper {
 				path = "/" + path;
 			}
 
-			return path;
+			return sanitizePath(path);
 		}
 		return null;
+	}
+
+	/**
+	 * Removes all occurrence of Regex expressions from a path
+	 * For example: /api/{workspaceId: [0-9]+} ==> /api/{workspaceId}
+	 * @param path The path to sanitize and remove regular expressions from
+	 * @return Sanitized path
+	 */
+	public static String sanitizePath(String path) {
+		// Fix for Issue #73 - Support Regex expressions in JAX-RS @Path annotation
+		// See: https://github.com/teamcarma/swagger-jaxrs-doclet/issues/73
+		return path.replaceAll("[: ]+.*?}", "}");
 	}
 
 	/**

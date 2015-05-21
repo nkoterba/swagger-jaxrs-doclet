@@ -1,29 +1,19 @@
 package com.carma.swagger.doclet.parser;
 
-import static com.carma.swagger.doclet.parser.ParserHelper.parsePath;
-import static com.google.common.base.Objects.equal;
-import static com.google.common.base.Objects.firstNonNull;
-import static com.google.common.collect.Maps.uniqueIndex;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
 import com.carma.swagger.doclet.DocletOptions;
-import com.carma.swagger.doclet.model.Api;
-import com.carma.swagger.doclet.model.ApiDeclaration;
-import com.carma.swagger.doclet.model.Method;
-import com.carma.swagger.doclet.model.Model;
-import com.carma.swagger.doclet.model.Operation;
+import com.carma.swagger.doclet.model.*;
 import com.google.common.base.Function;
 import com.sun.javadoc.ClassDoc;
 import com.sun.javadoc.MethodDoc;
 import com.sun.javadoc.Tag;
 import com.sun.javadoc.Type;
+
+import java.util.*;
+
+import static com.carma.swagger.doclet.parser.ParserHelper.parsePath;
+import static com.google.common.base.Objects.equal;
+import static com.google.common.base.Objects.firstNonNull;
+import static com.google.common.collect.Maps.uniqueIndex;
 
 /**
  * The CrossClassApiParser represents an api class parser that supports ApiDeclaration being
@@ -214,9 +204,17 @@ public class CrossClassApiParser {
 				}
 			}
 		}
-		if (resourcePath != null && !resourcePath.startsWith("/")) {
-			resourcePath = "/" + resourcePath;
+
+		// sanitize the path and ensure it starts with /
+		if (resourcePath != null) {
+			resourcePath = ParserHelper.sanitizePath(resourcePath);
+
+			if (!resourcePath.startsWith("/")) {
+				resourcePath = "/" + resourcePath;
+			}
 		}
+
+
 		return resourcePath;
 	}
 

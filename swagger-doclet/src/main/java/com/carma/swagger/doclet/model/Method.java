@@ -1,5 +1,7 @@
 package com.carma.swagger.doclet.model;
 
+import com.carma.swagger.doclet.parser.ParserHelper;
+
 import java.util.List;
 
 public class Method {
@@ -32,7 +34,7 @@ public class Method {
 			List<String> consumes, List<String> produces, OperationAuthorizations authorizations, boolean deprecated) {
 		this.method = method;
 		this.methodName = methodName;
-		this.path = path;
+		this.path = ParserHelper.sanitizePath(path);
 		this.apiParameters = apiParameters;
 		this.responseMessages = responseMessages;
 		this.summary = summary;

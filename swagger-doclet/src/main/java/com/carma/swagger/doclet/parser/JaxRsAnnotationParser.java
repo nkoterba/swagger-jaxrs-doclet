@@ -1,36 +1,20 @@
 package com.carma.swagger.doclet.parser;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
-
 import com.carma.swagger.doclet.DocletOptions;
 import com.carma.swagger.doclet.Recorder;
 import com.carma.swagger.doclet.ServiceDoclet;
-import com.carma.swagger.doclet.model.Api;
-import com.carma.swagger.doclet.model.ApiDeclaration;
-import com.carma.swagger.doclet.model.HttpMethod;
-import com.carma.swagger.doclet.model.ResourceListing;
-import com.carma.swagger.doclet.model.ResourceListingAPI;
+import com.carma.swagger.doclet.model.*;
 import com.google.common.base.Strings;
 import com.google.common.io.ByteStreams;
 import com.sun.javadoc.ClassDoc;
 import com.sun.javadoc.MethodDoc;
 import com.sun.javadoc.RootDoc;
 import com.sun.javadoc.Type;
+
+import java.io.*;
+import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
 @SuppressWarnings("javadoc")
 public class JaxRsAnnotationParser {
