@@ -1,20 +1,15 @@
 package com.carma.swagger.doclet.translator;
 
-import static com.carma.swagger.doclet.translator.Translator.OptionalName.ignored;
-import static com.carma.swagger.doclet.translator.Translator.OptionalName.presentOrMissing;
+import com.carma.swagger.doclet.DocletOptions;
+import com.carma.swagger.doclet.parser.AnnotationParser;
+import com.carma.swagger.doclet.parser.ParserHelper;
+import com.sun.javadoc.*;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import com.carma.swagger.doclet.DocletOptions;
-import com.carma.swagger.doclet.parser.AnnotationParser;
-import com.carma.swagger.doclet.parser.ParserHelper;
-import com.sun.javadoc.ClassDoc;
-import com.sun.javadoc.FieldDoc;
-import com.sun.javadoc.MethodDoc;
-import com.sun.javadoc.Parameter;
-import com.sun.javadoc.ProgramElementDoc;
-import com.sun.javadoc.Type;
+import static com.carma.swagger.doclet.translator.Translator.OptionalName.ignored;
+import static com.carma.swagger.doclet.translator.Translator.OptionalName.presentOrMissing;
 
 /**
  * The AnnotationAwareTranslator represents a translator that can source the names from various
@@ -115,7 +110,6 @@ public class AnnotationAwareTranslator implements Translator {
 				return res;
 			}
 		}
-
 		return typeName(cacheKey);
 	}
 

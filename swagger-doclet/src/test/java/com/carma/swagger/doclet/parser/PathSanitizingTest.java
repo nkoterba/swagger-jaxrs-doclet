@@ -14,29 +14,18 @@ public class PathSanitizingTest extends TestCase {
 	 */
 	public void testApiPath() {
 
-		assertEquals("/api", ParserHelper.sanitizeApiPath("/api"));
-		assertEquals("/api/test", ParserHelper.sanitizeApiPath("/api/test"));
-		assertEquals("/api/test{id}", ParserHelper.sanitizeApiPath("/api/test{id}"));
-		assertEquals("/api/test/{id}", ParserHelper.sanitizeApiPath("/api/test/{id}"));
-		assertEquals("/api/test/{id}", ParserHelper.sanitizeApiPath("/api/test/{id }"));
-		assertEquals("/api/test/{id}", ParserHelper.sanitizeApiPath("/api/test/{id:}"));
-		assertEquals("/api/test/{id}", ParserHelper.sanitizeApiPath("/api/test/{id:[0-9]+}"));
-		assertEquals("/api/test/{id}", ParserHelper.sanitizeApiPath("/api/test/{id: [0-9]+}"));
-	}
+		assertEquals("/api", ParserHelper.sanitizePath("/api"));
+		assertEquals("/api/test", ParserHelper.sanitizePath("/api/test"));
+		assertEquals("/api/test{id}", ParserHelper.sanitizePath("/api/test{id}"));
+		assertEquals("/api/test/{id}", ParserHelper.sanitizePath("/api/test/{id}"));
+		assertEquals("/api/test/{id}", ParserHelper.sanitizePath("/api/test/{id }"));
+		assertEquals("/api/test/{id}", ParserHelper.sanitizePath("/api/test/{id:}"));
+		assertEquals("/api/test/{id}", ParserHelper.sanitizePath("/api/test/{id : }"));
+		assertEquals("/api/test/{id}", ParserHelper.sanitizePath("/api/test/{id :}"));
+		assertEquals("/api/test/{id}", ParserHelper.sanitizePath("/api/test/{id:[0-9]+}"));
+		assertEquals("/api/test/{id}", ParserHelper.sanitizePath("/api/test/{id: [0-9]+}"));
 
-	/**
-	 * This tests the resource path sanitization
-	 */
-	public void testResourcePath() {
-		assertEquals("/api", ParserHelper.sanitizeResourcePath("/api"));
-		assertEquals("/api_test", ParserHelper.sanitizeResourcePath("/api/test"));
-		assertEquals("/api_test", ParserHelper.sanitizeResourcePath("/api/test/"));
-		assertEquals("/api_test", ParserHelper.sanitizeResourcePath("/api/test{id}"));
-		assertEquals("/api_test", ParserHelper.sanitizeResourcePath("/api/test/{id}"));
-		assertEquals("/api_test", ParserHelper.sanitizeResourcePath("/api/test/{id }"));
-		assertEquals("/api_test", ParserHelper.sanitizeResourcePath("/api/test/{id:}"));
-		assertEquals("/api_test", ParserHelper.sanitizeResourcePath("/api/test/{id:[0-9]+}"));
-		assertEquals("/api_test", ParserHelper.sanitizeResourcePath("/api/test/{id: [0-9]+}"));
+		assertEquals("/api/{workspace}/{id}", ParserHelper.sanitizePath("/api/{workspace: \\w+}/{id: " +
+			"[0-9]+}"));
 	}
-
 }

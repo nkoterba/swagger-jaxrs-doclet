@@ -1,32 +1,15 @@
 package com.carma.swagger.doclet.parser;
 
-import static com.google.common.base.Objects.firstNonNull;
-import static com.google.common.collect.Lists.transform;
-import static java.util.Arrays.asList;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import com.carma.swagger.doclet.DocletOptions;
 import com.carma.swagger.doclet.model.HttpMethod;
 import com.google.common.base.Function;
-import com.sun.javadoc.AnnotationDesc;
-import com.sun.javadoc.ClassDoc;
-import com.sun.javadoc.FieldDoc;
-import com.sun.javadoc.MethodDoc;
-import com.sun.javadoc.Parameter;
-import com.sun.javadoc.ParameterizedType;
-import com.sun.javadoc.ProgramElementDoc;
-import com.sun.javadoc.SeeTag;
-import com.sun.javadoc.Tag;
-import com.sun.javadoc.Type;
-import com.sun.javadoc.TypeVariable;
+import com.sun.javadoc.*;
+
+import java.util.*;
+
+import static com.google.common.base.Objects.firstNonNull;
+import static com.google.common.collect.Lists.transform;
+import static java.util.Arrays.asList;
 
 /**
  * The ParserHelper represents a helper class for the parsers
@@ -177,9 +160,21 @@ public class ParserHelper {
 				path = "/" + path;
 			}
 
-			return path;
+			return sanitizePath(path);
 		}
 		return null;
+	}
+
+	/**
+	 * Removes all occurrence of Regex expressions from a path
+	 * For example: /api/{workspaceId: [0-9]+} ==> /api/{workspaceId}
+	 * @param path The path to sanitize and remove regular expressions from
+	 * @return Sanitized path
+	 */
+	public static String sanitizePath(String path) {
+		// Fix for Issue #73 - Support Regex expressions in JAX-RS @Path annotation
+		// See: https://github.com/teamcarma/swagger-jaxrs-doclet/issues/73
+		return path.replaceAll("[: ]+.*?}", "}");
 	}
 
 	/**
@@ -986,7 +981,7 @@ public class ParserHelper {
 	 * @param method The method
 	 * @return the names of the method parameters or an empty set if the method had none
 	 */
-	public static Set<String> getParamNames(com.sun.javadoc.MethodDoc method) {
+	public static Set<String> getParamNames(com.sun.javadoc.ExecutableMemberDoc method) {
 		Set<String> params = new HashSet<String>();
 		for (Parameter parameter : method.parameters()) {
 			params.add(parameter.name());
@@ -1088,6 +1083,42 @@ public class ParserHelper {
 		return (found) ? parameter : fallbackParameter;
 	}
 
+	public static Type getParamType(DocletOptions options, Type type) {
+		if (type != null) {
+			ParameterizedType pt = type.asParameterizedType();
+			if (pt != null) {
+				Type[] typeArgs = pt.typeArguments();
+				if (typeArgs != null && typeArgs.length > 0) {
+					// if its a generic wrapper type then return the wrapped type
+					if (options.getGenericWrapperTypes().contains(type.qualifiedTypeName())) {
+						return typeArgs[0];
+					}
+				}
+			}
+		}
+		return type;
+	}
+
+	public static Boolean getAllowMultiple(String paramCategory, String paramName, List<String>
+		csvParams) {
+		Boolean allowMultiple = null;
+		if ("query".equals(paramCategory) || "path".equals(paramCategory) || "header".equals(paramCategory)) {
+			if (csvParams != null && csvParams.contains(paramName)) {
+				allowMultiple = Boolean.TRUE;
+			}
+		}
+		return allowMultiple;
+	}
+
+	public static String commentForParameter(ExecutableMemberDoc method, Parameter parameter) {
+		for (ParamTag tag : method.paramTags()) {
+			if (tag.parameterName().equals(parameter.name())) {
+				return tag.parameterComment();
+			}
+		}
+		return "";
+	}
+
 	/**
 	 * This gets the values of parameters from either javadoc tags or annotations
 	 * @param method The method
@@ -1183,6 +1214,46 @@ public class ParserHelper {
 		return Collections.emptyMap();
 	}
 
+	public static Map<String, String> getParamNameValuePairs(com.sun.javadoc.MethodDoc
+		                                                                 method, Set<String> params, Collection<String> matchTags,
+	                                                               DocletOptions options) {
+
+		if (params == null) {
+			params = getParamNames(method);
+		}
+
+		// add name to value pairs from any matching javadoc tag on the method
+		String value = getInheritableTagValue(method, matchTags, options);
+		if (value != null) {
+			String[] parts = value.split("\\s+");
+			if (parts != null && parts.length > 0) {
+				if (parts.length % 2 != 0) {
+					throw new IllegalStateException(
+						"Invalid javadoc parameter on method "
+							+ method.name()
+							+ " for tags: "
+							+ matchTags
+							+ ". The value had "
+							+ parts.length
+							+ " whitespace seperated parts when it was expected to have name value pairs for each parameter, e.g. the number of parts should have been even.");
+				}
+				Map<String, String> res = new HashMap<String, String>();
+				for (int i = 0; i < parts.length; i += 2) {
+					String name = parts[i];
+					if (!params.contains(name)) {
+						throw new IllegalStateException("Invalid javadoc parameter on method " + method.name() + " for tags: " + matchTags + ". The parameter "
+							+ name + " is not the name of one of the method parameters.");
+					}
+					String val = parts[i + 1];
+					res.put(name, val);
+				}
+				return res;
+			}
+		}
+
+		return Collections.emptyMap();
+	}
+
 	/**
 	 * This gets a list of parameter names from a method javadoc tag where the value of the tag is in the form
 	 * paramName1,paramName2 ... paramNameN
@@ -1192,7 +1263,8 @@ public class ParserHelper {
 	 * @param options The doclet options
 	 * @return The list of parameter names or an empty list if there were none
 	 */
-	public static List<String> getCsvParams(com.sun.javadoc.MethodDoc method, Set<String> params, Collection<String> matchTags, DocletOptions options) {
+	public static List<String> getCsvParams(com.sun.javadoc.MethodDoc method, Set<String> params,
+	                                        Collection<String> matchTags, DocletOptions options) {
 		if (params == null) {
 			params = getParamNames(method);
 		}

@@ -1,47 +1,22 @@
 package com.carma.swagger.doclet.parser;
 
-import static com.google.common.base.Objects.firstNonNull;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.ws.rs.core.MediaType;
-
 import com.carma.swagger.doclet.DocletOptions;
-import com.carma.swagger.doclet.model.ApiParameter;
-import com.carma.swagger.doclet.model.ApiResponseMessage;
-import com.carma.swagger.doclet.model.HttpMethod;
-import com.carma.swagger.doclet.model.Method;
-import com.carma.swagger.doclet.model.Model;
-import com.carma.swagger.doclet.model.Oauth2Scope;
-import com.carma.swagger.doclet.model.OperationAuthorizations;
-import com.carma.swagger.doclet.model.Property;
+import com.carma.swagger.doclet.model.*;
 import com.carma.swagger.doclet.parser.ParserHelper.NumericTypeFilter;
 import com.carma.swagger.doclet.translator.Translator;
 import com.carma.swagger.doclet.translator.Translator.OptionalName;
-import com.sun.javadoc.AnnotationDesc;
-import com.sun.javadoc.ClassDoc;
-import com.sun.javadoc.MethodDoc;
-import com.sun.javadoc.ParamTag;
-import com.sun.javadoc.Parameter;
-import com.sun.javadoc.ParameterizedType;
-import com.sun.javadoc.Type;
-import com.sun.javadoc.TypeVariable;
+import com.sun.javadoc.*;
+
+import javax.ws.rs.core.MediaType;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static com.google.common.base.Objects.firstNonNull;
 
 /**
  * The ApiMethodParser represents a parser for resource methods
+ *
  * @version $Id$
  */
 public class ApiMethodParser {
@@ -49,16 +24,7 @@ public class ApiMethodParser {
 	private static final Pattern GENERIC_RESPONSE_PATTERN = Pattern.compile("(.*)<(.*)>");
 
 	// pattern that can match a code, a description and an optional response model type
-	private static final Pattern[] RESPONSE_MESSAGE_PATTERNS = new Pattern[] { Pattern.compile("(\\d+)([^`]+)(`.*)?") };
-
-	private static String commentForParameter(MethodDoc method, Parameter parameter) {
-		for (ParamTag tag : method.paramTags()) {
-			if (tag.parameterName().equals(parameter.name())) {
-				return tag.parameterComment();
-			}
-		}
-		return "";
-	}
+	private static final Pattern[] RESPONSE_MESSAGE_PATTERNS = new Pattern[]{Pattern.compile("(\\d+)([^`]+)(`.*)?")};
 
 	private Method parentMethod;
 	private String parentPath;
@@ -76,6 +42,7 @@ public class ApiMethodParser {
 
 	/**
 	 * This creates a ApiMethodParser
+	 *
 	 * @param options
 	 * @param parentPath
 	 * @param methodDoc
@@ -84,7 +51,7 @@ public class ApiMethodParser {
 	 * @param classDefaultErrorType
 	 */
 	public ApiMethodParser(DocletOptions options, String parentPath, MethodDoc methodDoc, Collection<ClassDoc> classes, Collection<ClassDoc> typeClasses,
-			String classDefaultErrorType) {
+	                       String classDefaultErrorType) {
 		this.options = options;
 		this.translator = options.getTranslator();
 		this.parentPath = parentPath;
@@ -107,6 +74,7 @@ public class ApiMethodParser {
 
 	/**
 	 * This creates a ApiMethodParser
+	 *
 	 * @param options
 	 * @param parentMethod
 	 * @param methodDoc
@@ -115,7 +83,7 @@ public class ApiMethodParser {
 	 * @param classDefaultErrorType
 	 */
 	public ApiMethodParser(DocletOptions options, Method parentMethod, MethodDoc methodDoc, Collection<ClassDoc> classes, Collection<ClassDoc> typeClasses,
-			String classDefaultErrorType) {
+	                       String classDefaultErrorType) {
 		this(options, parentMethod.getPath(), methodDoc, classes, typeClasses, classDefaultErrorType);
 
 		this.parentPath = parentMethod.getPath();
@@ -125,6 +93,7 @@ public class ApiMethodParser {
 
 	/**
 	 * This parses a javadoc method doc and builds a pojo representation of it.
+	 *
 	 * @return The method with appropriate data set
 	 */
 	public Method parse() {
@@ -264,7 +233,7 @@ public class ApiMethodParser {
 
 		// final result!
 		return new Method(this.httpMethod, this.methodDoc.name(), path, parameters, responseMessages, summary, notes, returnTypeName, returnTypeItemsRef,
-				returnTypeItemsType, returnTypeItemsFormat, consumes, produces, authorizations, deprecated);
+			returnTypeItemsType, returnTypeItemsFormat, consumes, produces, authorizations, deprecated);
 	}
 
 	private OperationAuthorizations generateAuthorizations() {
@@ -273,7 +242,7 @@ public class ApiMethodParser {
 		// build map of scopes from the api auth
 		Map<String, Oauth2Scope> apiScopes = new HashMap<String, Oauth2Scope>();
 		if (this.options.getApiAuthorizations() != null && this.options.getApiAuthorizations().getOauth2() != null
-				&& this.options.getApiAuthorizations().getOauth2().getScopes() != null) {
+			&& this.options.getApiAuthorizations().getOauth2().getScopes() != null) {
 			List<Oauth2Scope> scopes = this.options.getApiAuthorizations().getOauth2().getScopes();
 			if (scopes != null) {
 				for (Oauth2Scope scope : scopes) {
@@ -297,7 +266,7 @@ public class ApiMethodParser {
 					Oauth2Scope apiScope = apiScopes.get(scopeVal);
 					if (apiScope == null) {
 						throw new IllegalStateException("The scope: " + scopeVal + " was referenced in the method: " + this.methodDoc
-								+ " but this scope was not part of the API service.json level authorization object.");
+							+ " but this scope was not part of the API service.json level authorization object.");
 					}
 					oauth2Scopes.add(apiScope);
 				}
@@ -328,7 +297,7 @@ public class ApiMethodParser {
 								Oauth2Scope apiScope = apiScopes.get(scopeVal);
 								if (apiScope == null) {
 									throw new IllegalStateException("The default scope: " + scopeVal + " needed for the authorized method: " + this.methodDoc
-											+ " was not part of the API service.json level authorization object.");
+										+ " was not part of the API service.json level authorization object.");
 								}
 								oauth2Scopes.add(apiScope);
 							}
@@ -457,10 +426,10 @@ public class ApiMethodParser {
 
 		// read required and optional params
 		Set<String> optionalParams = ParserHelper.getMatchingParams(this.methodDoc, allParamNames, this.options.getOptionalParamsTags(),
-				this.options.getOptionalParamAnnotations(), this.options);
+			this.options.getOptionalParamAnnotations(), this.options);
 
 		Set<String> requiredParams = ParserHelper.getMatchingParams(this.methodDoc, allParamNames, this.options.getRequiredParamsTags(),
-				this.options.getRequiredParamAnnotations(), this.options);
+			this.options.getRequiredParamAnnotations(), this.options);
 
 		// read exclude params
 		List<String> excludeParams = ParserHelper.getCsvParams(this.methodDoc, allParamNames, this.options.getExcludeParamsTags(), this.options);
@@ -470,19 +439,19 @@ public class ApiMethodParser {
 
 		// read min and max values of params
 		Map<String, String> paramMinVals = ParserHelper.getParameterValues(this.methodDoc, allParamNames, this.options.getParamsMinValueTags(),
-				this.options.getParamMinValueAnnotations(), new NumericTypeFilter(this.options), this.options, new String[] { "value", "min" });
+			this.options.getParamMinValueAnnotations(), new NumericTypeFilter(this.options), this.options, new String[]{"value", "min"});
 		Map<String, String> paramMaxVals = ParserHelper.getParameterValues(this.methodDoc, allParamNames, this.options.getParamsMaxValueTags(),
-				this.options.getParamMaxValueAnnotations(), new NumericTypeFilter(this.options), this.options, new String[] { "value", "max" });
+			this.options.getParamMaxValueAnnotations(), new NumericTypeFilter(this.options), this.options, new String[]{"value", "max"});
 
 		// filter min/max params so they
 
 		// read default values of params
 		Map<String, String> paramDefaultVals = ParserHelper.getMethodParamNameValuePairs(this.methodDoc, allParamNames,
-				this.options.getParamsDefaultValueTags(), this.options);
+			this.options.getParamsDefaultValueTags(), this.options);
 
 		// read override names of params
 		Map<String, String> paramNames = ParserHelper.getMethodParamNameValuePairs(this.methodDoc, allParamNames, this.options.getParamsNameTags(),
-				this.options);
+			this.options);
 
 		for (int paramIndex = 0; paramIndex < this.methodDoc.parameters().length; paramIndex++) {
 			final Parameter parameter = ParserHelper.getParameterWithAnnotations(this.methodDoc, paramIndex);
@@ -510,7 +479,8 @@ public class ApiMethodParser {
 							String renderedParamName = entry.getKey();
 							String rawFieldName = property.getRawFieldName();
 
-							Boolean allowMultiple = getAllowMultiple(paramCategory, rawFieldName, csvParams);
+							Boolean allowMultiple = ParserHelper.getAllowMultiple(paramCategory, rawFieldName,
+								csvParams);
 
 							// see if there is a required javadoc tag directly on the bean param field, if so use that
 							Boolean required = null;
@@ -527,8 +497,8 @@ public class ApiMethodParser {
 							String itemsFormat = property.getItems() == null ? null : property.getItems().getFormat();
 
 							ApiParameter param = new ApiParameter(property.getParamCategory(), renderedParamName, required, allowMultiple, property.getType(),
-									property.getFormat(), property.getDescription(), itemsRef, itemsType, itemsFormat, property.getUniqueItems(),
-									property.getAllowableValues(), property.getMinimum(), property.getMaximum(), property.getDefaultValue());
+								property.getFormat(), property.getDescription(), itemsRef, itemsType, itemsFormat, property.getUniqueItems(),
+								property.getAllowableValues(), property.getMinimum(), property.getMaximum(), property.getDefaultValue());
 
 							parameters.add(param);
 						}
@@ -579,7 +549,7 @@ public class ApiMethodParser {
 				}
 
 				// set whether its a csv param
-				allowMultiple = getAllowMultiple(paramCategory, paramName, csvParams);
+				allowMultiple = ParserHelper.getAllowMultiple(paramCategory, paramName, csvParams);
 
 				// get min and max param values
 				minimum = paramMinVals.get(paramName);
@@ -609,14 +579,14 @@ public class ApiMethodParser {
 						int comparison = ParserHelper.compareNumericValues(validationContext + " min value.", typeName, format, defaultVal, minimum);
 						if (comparison < 0) {
 							throw new IllegalStateException("Invalid value for the default value of the method: " + this.methodDoc.name() + " parameter: "
-									+ paramName + " it should be >= the minimum: " + minimum);
+								+ paramName + " it should be >= the minimum: " + minimum);
 						}
 					}
 					if (maximum != null) {
 						int comparison = ParserHelper.compareNumericValues(validationContext + " max value.", typeName, format, defaultVal, maximum);
 						if (comparison > 0) {
 							throw new IllegalStateException("Invalid value for the default value of the method: " + this.methodDoc.name() + " parameter: "
-									+ paramName + " it should be <= the maximum: " + maximum);
+								+ paramName + " it should be <= the maximum: " + maximum);
 						}
 					}
 
@@ -629,7 +599,7 @@ public class ApiMethodParser {
 				// if enum and default value check it matches the enum values
 				if (allowableValues != null && defaultVal != null && !allowableValues.contains(defaultVal)) {
 					throw new IllegalStateException("Invalid value: " + defaultVal + " for the default value of the method: " + this.methodDoc.name()
-							+ " parameter: " + paramName + " it should be one of: " + allowableValues);
+						+ " parameter: " + paramName + " it should be one of: " + allowableValues);
 				}
 
 				// set collection related fields
@@ -658,11 +628,13 @@ public class ApiMethodParser {
 			String renderedParamName = ParserHelper.paramNameOf(parameter, paramNames, this.options.getParameterNameAnnotations(), this.options);
 
 			// get description
-			String description = this.options.replaceVars(commentForParameter(this.methodDoc, parameter));
+			String description = this.options.replaceVars(ParserHelper.commentForParameter(this
+					.methodDoc,
+				parameter));
 
 			// build parameter
 			ApiParameter param = new ApiParameter(paramCategory, renderedParamName, required, allowMultiple, typeName, format, description, itemsRef,
-					itemsType, itemsFormat, uniqueItems, allowableValues, minimum, maximum, defaultVal);
+				itemsType, itemsFormat, uniqueItems, allowableValues, minimum, maximum, defaultVal);
 
 			parameters.add(param);
 		}
@@ -673,16 +645,6 @@ public class ApiMethodParser {
 		}
 
 		return parameters;
-	}
-
-	private Boolean getAllowMultiple(String paramCategory, String paramName, List<String> csvParams) {
-		Boolean allowMultiple = null;
-		if ("query".equals(paramCategory) || "path".equals(paramCategory) || "header".equals(paramCategory)) {
-			if (csvParams != null && csvParams.contains(paramName)) {
-				allowMultiple = Boolean.TRUE;
-			}
-		}
-		return allowMultiple;
 	}
 
 	private Boolean getRequired(String paramCategory, String paramName, String typeName, Collection<String> optionalParams, Collection<String> requiredParams) {
@@ -713,6 +675,7 @@ public class ApiMethodParser {
 
 	/**
 	 * This gets the parsed models found for this method
+	 *
 	 * @return the set of parsed models found for this method
 	 */
 	public Set<Model> models() {
@@ -868,11 +831,11 @@ public class ApiMethodParser {
 
 	private void raiseCustomTypeNotFoundError(String customType) {
 		throw new IllegalStateException(
-				"Could not find the source for the custom response class: "
-						+ customType
-						+ ". If it is not in the same project as the one you have added the doclet to, "
-						+ "for example if it is in a dependent project then you should copy the source to the doclet calling project using the maven-dependency-plugin's unpack goal,"
-						+ " and then add it to the source using the build-helper-maven-plugin's add-source goal.");
+			"Could not find the source for the custom response class: "
+				+ customType
+				+ ". If it is not in the same project as the one you have added the doclet to, "
+				+ "for example if it is in a dependent project then you should copy the source to the doclet calling project using the maven-dependency-plugin's unpack goal,"
+				+ " and then add it to the source using the build-helper-maven-plugin's add-source goal.");
 	}
 
 	private boolean shouldIncludeParameter(HttpMethod httpMethod, List<String> excludeParams, Parameter parameter) {

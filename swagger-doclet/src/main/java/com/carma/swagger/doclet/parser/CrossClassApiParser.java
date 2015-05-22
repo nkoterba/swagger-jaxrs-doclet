@@ -1,35 +1,26 @@
 package com.carma.swagger.doclet.parser;
 
+import com.carma.swagger.doclet.DocletOptions;
+import com.carma.swagger.doclet.model.*;
+import com.carma.swagger.doclet.translator.Translator;
+import com.google.common.base.Function;
+import com.sun.javadoc.*;
+
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import static com.carma.swagger.doclet.parser.ParserHelper.parsePath;
 import static com.google.common.base.Objects.equal;
 import static com.google.common.base.Objects.firstNonNull;
 import static com.google.common.collect.Maps.uniqueIndex;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-
-import com.carma.swagger.doclet.DocletOptions;
-import com.carma.swagger.doclet.model.Api;
-import com.carma.swagger.doclet.model.ApiDeclaration;
-import com.carma.swagger.doclet.model.Method;
-import com.carma.swagger.doclet.model.Model;
-import com.carma.swagger.doclet.model.Operation;
-import com.google.common.base.Function;
-import com.sun.javadoc.ClassDoc;
-import com.sun.javadoc.MethodDoc;
-import com.sun.javadoc.Tag;
-import com.sun.javadoc.Type;
-
 /**
  * The CrossClassApiParser represents an api class parser that supports ApiDeclaration being
  * spread across multiple resource classes.
- * @version $Id$
+ *
  * @author conor.roche
+ * @version $Id$
  */
 public class CrossClassApiParser {
 
@@ -45,19 +36,22 @@ public class CrossClassApiParser {
 	private final Map<Type, ClassDoc> subResourceClasses;
 	private final Collection<ClassDoc> typeClasses;
 
+	private final Pattern classPathParamPattern = Pattern.compile("\\{(.*?)\\}");
+
 	/**
 	 * This creates a CrossClassApiParser for top level parsing
-	 * @param options The options for parsing
-	 * @param classDoc The class doc
-	 * @param classes The doclet classes to document
-	 * @param typeClasses Extra type classes that can be used as generic parameters
+	 *
+	 * @param options            The options for parsing
+	 * @param classDoc           The class doc
+	 * @param classes            The doclet classes to document
+	 * @param typeClasses        Extra type classes that can be used as generic parameters
 	 * @param subResourceClasses Sub resource doclet classes
-	 * @param swaggerVersion Swagger version
-	 * @param apiVersion Overall API version
-	 * @param basePath Overall base path
+	 * @param swaggerVersion     Swagger version
+	 * @param apiVersion         Overall API version
+	 * @param basePath           Overall base path
 	 */
 	public CrossClassApiParser(DocletOptions options, ClassDoc classDoc, Collection<ClassDoc> classes, Map<Type, ClassDoc> subResourceClasses,
-			Collection<ClassDoc> typeClasses, String swaggerVersion, String apiVersion, String basePath) {
+	                           Collection<ClassDoc> typeClasses, String swaggerVersion, String apiVersion, String basePath) {
 		super();
 		this.options = options;
 		this.classDoc = classDoc;
@@ -73,19 +67,20 @@ public class CrossClassApiParser {
 
 	/**
 	 * This creates a CrossClassApiParser for parsing a subresource
-	 * @param options The options for parsing
-	 * @param classDoc The class doc
-	 * @param classes The doclet classes to document
-	 * @param typeClasses Extra type classes that can be used as generic parameters
+	 *
+	 * @param options            The options for parsing
+	 * @param classDoc           The class doc
+	 * @param classes            The doclet classes to document
+	 * @param typeClasses        Extra type classes that can be used as generic parameters
 	 * @param subResourceClasses Sub resource doclet classes
-	 * @param swaggerVersion Swagger version
-	 * @param apiVersion Overall API version
-	 * @param basePath Overall base path
-	 * @param parentMethod The parent method that "owns" this sub resource
+	 * @param swaggerVersion     Swagger version
+	 * @param apiVersion         Overall API version
+	 * @param basePath           Overall base path
+	 * @param parentMethod       The parent method that "owns" this sub resource
 	 * @param parentResourcePath The parent resource path
 	 */
 	public CrossClassApiParser(DocletOptions options, ClassDoc classDoc, Collection<ClassDoc> classes, Map<Type, ClassDoc> subResourceClasses,
-			Collection<ClassDoc> typeClasses, String swaggerVersion, String apiVersion, String basePath, Method parentMethod, String parentResourcePath) {
+	                           Collection<ClassDoc> typeClasses, String swaggerVersion, String apiVersion, String basePath, Method parentMethod, String parentResourcePath) {
 		super();
 		this.options = options;
 		this.classDoc = classDoc;
@@ -101,6 +96,7 @@ public class CrossClassApiParser {
 
 	/**
 	 * This gets the root jaxrs path of the api resource class
+	 *
 	 * @return The root path
 	 */
 	public String getRootPath() {
@@ -109,6 +105,7 @@ public class CrossClassApiParser {
 
 	/**
 	 * This parses the api declarations from the resource classes of the api
+	 *
 	 * @param declarations The map of resource name to declaration which will be added to
 	 */
 	public void parse(Map<String, ApiDeclaration> declarations) {
@@ -139,8 +136,8 @@ public class CrossClassApiParser {
 			} else {
 				for (MethodDoc method : currentClassDoc.methods()) {
 					ApiMethodParser methodParser = this.parentMethod == null ? new ApiMethodParser(this.options, this.rootPath, method, this.classes,
-							this.typeClasses, defaultErrorTypeClass) : new ApiMethodParser(this.options, this.parentMethod, method, this.classes,
-							this.typeClasses, defaultErrorTypeClass);
+						this.typeClasses, defaultErrorTypeClass) : new ApiMethodParser(this.options, this.parentMethod, method, this.classes,
+						this.typeClasses, defaultErrorTypeClass);
 
 					Method parsedMethod = methodParser.parse();
 					if (parsedMethod == null) {
@@ -159,7 +156,7 @@ public class CrossClassApiParser {
 							shrunkClasses.remove(currentClassDoc);
 							// recursively parse the sub-resource class
 							CrossClassApiParser subResourceParser = new CrossClassApiParser(this.options, subResourceClassDoc, shrunkClasses,
-									this.subResourceClasses, this.typeClasses, this.swaggerVersion, this.apiVersion, this.basePath, parsedMethod, resourcePath);
+								this.subResourceClasses, this.typeClasses, this.swaggerVersion, this.apiVersion, this.basePath, parsedMethod, resourcePath);
 							subResourceParser.parse(declarations);
 						}
 						continue;
@@ -179,22 +176,209 @@ public class CrossClassApiParser {
 					// look for a method level description tag for the resource listing and set on the resource if the resource hasn't had one set
 					setApiDeclarationDescription(classResourceDescription, method, declaration);
 
-					// find api this method should be added to
-					addMethod(method, parsedMethod, declaration);
+// find api this method should be added to
+addMethod(method, parsedMethod, declaration);
 
-					// add models
-					Set<Model> methodModels = methodParser.models();
-					Map<String, Model> idToModels = addApiModels(classModels, methodModels, method);
-					declaration.getModels().putAll(idToModels);
-				}
-			}
-			currentClassDoc = currentClassDoc.superclass();
-			// ignore parent object class
-			if (!ParserHelper.hasAncestor(currentClassDoc)) {
-				break;
+// ------------ START CODE UPDATE/HACK -------------
+
+// Check class constructors for @PathParam presence
+for (ConstructorDoc c : currentClassDoc.constructors()) {
+
+// get raw parameter names from 'constructor' signature
+// TODO: THis is a hack as I wasn't sure how to get this mapping for constructors
+Map<String, String> paramNames = new HashMap<String, String>();
+
+for (String paramName : ParserHelper.getParamNames(c))
+	paramNames.put(paramName, paramName);
+// END HACK
+
+for (Parameter p : c.parameters()) {
+	String paramCategory = ParserHelper.paramTypeOf(false, p, this.options);
+
+	if (paramCategory.equals("path")) { // TODO: Some way to not use string here?
+		Type paramType = ParserHelper.getParamType(this.options, p.type());
+
+		String renderedParamName = ParserHelper.paramNameOf(p, paramNames, this.options
+			.getParameterNameAnnotations(), this.options);
+
+		// Always required as a Class-level path param
+		boolean required = true;
+
+		// Assuming constructor @PathParams will never consume multipart
+		boolean consumesMultipart = false;
+
+		Translator.OptionalName paramTypeFormat = this.options.getTranslator()
+			.parameterTypeName
+				(consumesMultipart, p, paramType);
+		String typeName = paramTypeFormat.value();
+		String format = paramTypeFormat.getFormat();
+
+		// get description
+		String description = this.options.replaceVars(ParserHelper.commentForParameter(c,
+			p));
+
+		Boolean allowMultiple = null;
+		List<String> allowableValues = null;
+		String itemsRef = null;
+		String itemsType = null;
+		String itemsFormat = null;
+		Boolean uniqueItems = null;
+		String minimum = null;
+		String maximum = null;
+		String defaultVal = null;
+
+		ApiParameter param = new ApiParameter(paramCategory,
+			renderedParamName,
+			required,
+			allowMultiple,
+			typeName,
+			format,
+			description,
+			itemsRef,
+			itemsType,
+			itemsFormat,
+			uniqueItems,
+			allowableValues,
+			minimum,
+			maximum,
+			defaultVal);
+
+		// Create a param
+
+		for (Api api : declaration.getApis()) {
+			for (Operation op : api.getOperations()) {
+				if (!op.getParameters().contains(param)) // This seems to work ok even if
+				// @PathParam exists on methods directly
+					op.getParameters().add(param);
 			}
 		}
+	}
+}
 
+// Now check class fields for @PathParam presence
+for (FieldDoc f : currentClassDoc.fields()) {
+	for (AnnotationDesc annot : f.annotations()) {
+		for(AnnotationDesc.ElementValuePair pair : annot.elementValues()) {
+			AnnotationValue value = pair.value();
+			AnnotationTypeElementDoc doc = pair.element();
+			if (doc.toString().startsWith("javax.ws.rs.PathParam")) {
+				String paramCategory = "path";
+
+				String renderedParamName = value.value().toString();
+
+				boolean required = true;
+				Boolean allowMultiple = null;
+				boolean consumesMultipart = false;
+
+				Type fieldType = f.type();
+
+				// Ok to pass null b/c consumesMultipart is false
+				Translator.OptionalName paramTypeFormat = this.options.getTranslator()
+					.parameterTypeName(consumesMultipart, null, fieldType);
+				String typeName = paramTypeFormat.value();
+				String format = paramTypeFormat.getFormat();
+
+				// get description
+				String description = this.options.replaceVars(f.commentText());
+
+				List<String> allowableValues = null;
+				String itemsRef = null;
+				String itemsType = null;
+				String itemsFormat = null;
+				Boolean uniqueItems = null;
+				String minimum = null;
+				String maximum = null;
+				String defaultVal = null;
+
+				ApiParameter param = new ApiParameter(paramCategory,
+					renderedParamName,
+					required,
+					allowMultiple,
+					typeName,
+					format,
+					description,
+					itemsRef,
+					itemsType,
+					itemsFormat,
+					uniqueItems,
+					allowableValues,
+					minimum,
+					maximum,
+					defaultVal);
+
+				// Create a param
+
+				for (Api api : declaration.getApis()) {
+					for (Operation op : api.getOperations()) {
+						if (!op.getParameters().contains(param))
+							op.getParameters().add(param);
+					}
+				}
+			}
+		}
+	}
+}
+
+// Finally, add any Class-based @PathParams that were not on constructors or fields
+// TODO: Handle all the customization this library supports with over-writing/renaming/etc
+if (this.rootPath != null && !this.rootPath.isEmpty() && this.rootPath.contains("{")) {
+	List<String> parentPathParams = new ArrayList<>();
+
+	// Extract all the @PathParam from the rootPath using Regex
+	Matcher m = classPathParamPattern.matcher(this.rootPath);
+	while (m.find())
+		parentPathParams.add(m.group(1));
+
+	for (String pathParam : parentPathParams) {
+		ApiParameter parameter = new ApiParameter(
+			"path",
+			pathParam,
+			true,
+			null,
+			"string", // TODO: Use possible regex expressions to determine number vs string?,
+			null,
+			null,
+			null,
+			null,
+			null,
+			null,
+			null, // TODO: Use Regex to generate a list of allowable values?
+			null,
+			null,
+			null
+		);
+
+		for (Api api : declaration.getApis()) {
+			for (Operation op : api.getOperations()) {
+				boolean addParam = true;
+
+				for (ApiParameter p : op.getParameters()) {
+					if (p.getName().equals(parameter.getName()))
+						addParam = false;
+				}
+
+				if (addParam)
+					op.getParameters().add(parameter);
+			}
+		}
+	}
+}
+
+// ------------ END CODE UPDATE/HACK -------------
+
+// add models
+Set<Model> methodModels = methodParser.models();
+Map<String, Model> idToModels = addApiModels(classModels, methodModels, method);
+declaration.getModels().putAll(idToModels);
+					}
+				}
+				currentClassDoc = currentClassDoc.superclass();
+				// ignore parent object class
+				if (!ParserHelper.hasAncestor(currentClassDoc)) {
+					break;
+				}
+			}
+		}
 	}
 
 	private String buildResourcePath(String classResourcePath, MethodDoc method) {
@@ -217,12 +401,13 @@ public class CrossClassApiParser {
 
 		// sanitize the path and ensure it starts with /
 		if (resourcePath != null) {
-			resourcePath = ParserHelper.sanitizeResourcePath(resourcePath);
+			resourcePath = ParserHelper.sanitizePath(resourcePath);
 
 			if (!resourcePath.startsWith("/")) {
 				resourcePath = "/" + resourcePath;
 			}
 		}
+
 
 		return resourcePath;
 	}
@@ -293,8 +478,8 @@ public class CrossClassApiParser {
 			boolean opParamsEmptyOrNull = operation.getParameters() == null || operation.getParameters().isEmpty();
 			boolean parsedParamsEmptyOrNull = parsedMethod.getParameters() == null || parsedMethod.getParameters().isEmpty();
 			if (operation.getMethod().equals(parsedMethod.getMethod())
-					&& ((parsedParamsEmptyOrNull && opParamsEmptyOrNull) || (!opParamsEmptyOrNull && !parsedParamsEmptyOrNull && operation.getParameters()
-							.size() == parsedMethod.getParameters().size())) && equal(operation.getNickname(), parsedMethod.getMethodName())) {
+				&& ((parsedParamsEmptyOrNull && opParamsEmptyOrNull) || (!opParamsEmptyOrNull && !parsedParamsEmptyOrNull && operation.getParameters()
+				.size() == parsedMethod.getParameters().size())) && equal(operation.getNickname(), parsedMethod.getMethodName())) {
 				alreadyAdded = true;
 			}
 		}

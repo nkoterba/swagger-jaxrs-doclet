@@ -1,27 +1,27 @@
 {
-    "apiVersion": "0",
-    "swaggerVersion": "1.2",
-    "basePath": "http://localhost:8080",
-    "resourcePath": "/project",
-    "apis": [
+  "apiVersion": "0",
+  "swaggerVersion": "1.2",
+  "basePath": "http://localhost:8080",
+  "resourcePath": "/project/{id}",
+  "apis": [
+    {
+      "path": "/project/{id}",
+      "operations": [
         {
-            "path": "/project/{id}",
-            "operations": [
-                {
-                    "method": "GET",
-                    "nickname": "getById",
-                    "type": "string",
-                    "parameters": [
-                        {
-                            "paramType": "path",
-                            "name": "id",
-                            "type": "integer",
-                            "format" : "int32",
-                            "required" : true
-                        }
-                    ]
-                }
-            ]
+          "method": "GET",
+          "nickname": "getById",
+          "type": "string",
+          "parameters": [
+            {
+              "paramType": "path",
+              "name": "id",
+              "type": "integer",
+              "format" : "int32",
+              "required" : true
+            }
+          ]
         }
-    ]    
+      ]
+    }
+  ]
 }

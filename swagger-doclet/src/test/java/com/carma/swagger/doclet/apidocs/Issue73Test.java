@@ -3,7 +3,6 @@ package com.carma.swagger.doclet.apidocs;
 import com.carma.swagger.doclet.DocletOptions;
 import com.carma.swagger.doclet.Recorder;
 import com.carma.swagger.doclet.model.ApiDeclaration;
-import com.carma.swagger.doclet.model.ResourceListing;
 import com.carma.swagger.doclet.parser.JaxRsAnnotationParser;
 import com.sun.javadoc.RootDoc;
 import org.junit.Before;
@@ -19,7 +18,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 @SuppressWarnings("javadoc")
-public class RegexPathResourceTest {
+public class Issue73Test {
 
 	private Recorder recorderMock;
 	private DocletOptions options;
@@ -32,13 +31,11 @@ public class RegexPathResourceTest {
 
 	@Test
 	public void testStart() throws IOException {
-		final RootDoc rootDoc = RootDocLoader.fromPath("src/test/resources", "fixtures.regexpath");
+		final RootDoc rootDoc = RootDocLoader.fromPath("src/test/resources", "fixtures.issue73");
 		new JaxRsAnnotationParser(this.options, rootDoc).run();
 
-		final ResourceListing expectedListing = loadFixture("/fixtures/regexpath/service.json", ResourceListing.class);
-		verify(this.recorderMock).record(any(File.class), eq(expectedListing));
-
-		final ApiDeclaration api = loadFixture("/fixtures/regexpath/regexpath.json", ApiDeclaration.class);
+		final ApiDeclaration api = loadFixture("/fixtures/issue73/issue73.json", ApiDeclaration
+			.class);
 		verify(this.recorderMock).record(any(File.class), eq(api));
 	}
 

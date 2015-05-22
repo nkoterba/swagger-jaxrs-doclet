@@ -1,9 +1,9 @@
 {
-    "apiVersion": "0",
-    "swaggerVersion": "1.2",
-    "apis": [
-        {
-            "path": "/project.{format}"
-        }
-    ]
+  "apiVersion": "0",
+  "swaggerVersion": "1.2",
+  "apis": [
+    {
+      "path": "/project/{id}.{format}"
+    }
+  ]
 }

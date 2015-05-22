@@ -1,8 +1,9 @@
 package com.carma.swagger.doclet.model;
 
-import static com.google.common.base.Strings.emptyToNull;
-
+import java.util.ArrayList;
 import java.util.List;
+
+import static com.google.common.base.Strings.emptyToNull;
 
 public class Operation {
 
@@ -35,7 +36,8 @@ public class Operation {
 		if (method.getReturnTypeItemsRef() != null || method.getReturnTypeItemsType() != null) {
 			this.items = new PropertyItems(method.getReturnTypeItemsRef(), method.getReturnTypeItemsType(), method.getReturnTypeItemsFormat());
 		}
-		this.parameters = method.getParameters().isEmpty() ? null : method.getParameters();
+		this.parameters = method.getParameters().isEmpty() ? new ArrayList<ApiParameter>() : method
+			.getParameters();
 		this.responseMessages = method.getResponseMessages().isEmpty() ? null : method.getResponseMessages();
 		this.summary = emptyToNull(method.getSummary());
 		this.notes = emptyToNull(method.getNotes());
