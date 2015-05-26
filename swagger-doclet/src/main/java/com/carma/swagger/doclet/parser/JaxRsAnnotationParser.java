@@ -217,7 +217,7 @@ public class JaxRsAnnotationParser {
 		for (ApiDeclaration api : apis) {
 			String resourcePath = api.getResourcePath();
 			if (!Strings.isNullOrEmpty(resourcePath)) {
-				String resourceName = resourcePath.replaceFirst("/", "");
+				String resourceName = resourcePath.replaceFirst("/", "").replaceAll("/", "_").replaceAll("[\\{\\}]", "");
 				resources.add(new ResourceListingAPI("/" + resourceName + ".{format}", api.getDescription()));
 				File apiFile = new File(outputDirectory, resourceName + ".json");
 				recorder.record(apiFile, api);
