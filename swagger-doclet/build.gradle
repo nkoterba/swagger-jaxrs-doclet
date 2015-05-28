@@ -1,6 +1,8 @@
 apply plugin: 'java'
 
+////// Required since using JavaDoc and Java tools version 1.7 (not compatible with 1.8)
 sourceCompatibility = 1.7 // or '1.6', '6', 6, JavaVersion.VERSION_1_6, new Compatibility('Java 6')
+targetCompatibility = 1.7
 
 ext {
     guavaVersion = '14.0.1'
@@ -17,9 +19,21 @@ dependencies {
     compile(
             "com.fasterxml.jackson.core:jackson-databind:$jacksonVersion",
             "com.google.guava:guava:$guavaVersion",
-            "javax.ws.rs:javax.ws.rs-api:$javaxRSVersion"
+            "javax.ws.rs:javax.ws.rs-api:$javaxRSVersion",
+
+            // Need to include tools.jar but Java Version 7 (1.7) since swagger-doclet uses
+            // JavaDoc Version 7 API calls
+            // Most online posts that suggest using tools.jar in Gradle suggest using:
+            // files("${System.properties['java.home']}/../lib/tools.jar")
+            // Unfortunately, on any system where Java 8 is the current Java JRE/JDK, this path
+            // resolves to: /Library/Java/JavaVirtualMachines/jdk1.8.0_25.jdk/Contents/Home/jre/.
+            // ./lib/tools.jar
+            // which will then pull in the Java 8 version of tools.jar and cause command-line
+            // gradle tasks to fail =(
+            // So for now just using it this way
+            // See: https://github.com/teamcarma/swagger-jaxrs-doclet/issues/83
+            fileTree(dir: 'lib', include: '*.jar')
     )
-    compile files("${System.properties['java.home']}/../lib/tools.jar", )
 
     testCompile(
             "junit:junit:$junitVersion",
@@ -29,3 +43,6 @@ dependencies {
             "org.codehaus.jackson:jackson-mapper-asl:$jacksonOrigVersion"
     )
 }
+
+check.dependsOn.remove(checkstyleMain)
+check.dependsOn.remove(checkstyleTest)
