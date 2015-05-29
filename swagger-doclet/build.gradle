@@ -1,9 +1,5 @@
 apply plugin: 'java'
 
-////// Required since using JavaDoc and Java tools version 1.7 (not compatible with 1.8)
-sourceCompatibility = 1.7 // or '1.6', '6', 6, JavaVersion.VERSION_1_6, new Compatibility('Java 6')
-targetCompatibility = 1.7
-
 ext {
     guavaVersion = '14.0.1'
     hibernateVersion = '1.0.1.Final'
@@ -13,6 +9,10 @@ ext {
     jerseyVersion = '1.17.1'
     junitVersion = '4.11'
     mockitoVersion = '2.0.8-beta'
+}
+
+checkstyle {
+    sourceSets = []
 }
 
 dependencies {
@@ -43,6 +43,3 @@ dependencies {
             "org.codehaus.jackson:jackson-mapper-asl:$jacksonOrigVersion"
     )
 }
-
-check.dependsOn.remove(checkstyleMain)
-check.dependsOn.remove(checkstyleTest)
