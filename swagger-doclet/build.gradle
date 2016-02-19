@@ -4,7 +4,7 @@ ext {
     guavaVersion = '14.0.1'
     hibernateVersion = '1.0.1.Final'
     jacksonOrigVersion = '1.9.13'
-    jacksonVersion = '2.1.4'
+    jacksonVersion = '2.7.1'
     javaxRSVersion = '2.0.1'
     jerseyVersion = '1.17.1'
     junitVersion = '4.11'
